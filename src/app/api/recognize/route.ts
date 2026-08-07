@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LLMClient, Config, HeaderUtils, type Message } from "coze-coding-dev-sdk";
+import { jsonrepair } from "jsonrepair";
 
 const SYSTEM_PROMPT = `识别图片中的简谱，输出JSON。
 
@@ -81,14 +82,27 @@ export async function POST(request: NextRequest) {
     try {
       const result = JSON.parse(jsonStr);
       return NextResponse.json({ success: true, data: result });
-    } catch {
-      console.error("[Recognize] JSON parse failed, length:", jsonStr.length);
-      console.error("[Recognize] First 300:", jsonStr.substring(0, 300));
-      console.error("[Recognize] Last 300:", jsonStr.substring(Math.max(0, jsonStr.length - 300)));
-      return NextResponse.json(
-        { error: "识别结果解析失败" },
-        { status: 500 }
-      );
+    } catch (e) {
+      // Try jsonrepair as a more powerful fallback
+      try {
+        const repaired = jsonrepair(jsonStr);
+        const result = JSON.parse(repaired);
+        console.log("[Recognize] jsonrepair succeeded");
+        return NextResponse.json({ success: true, data: result });
+      } catch (e2) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        const posMatch = errMsg.match(/position (\d+)/);
+        const pos = posMatch ? parseInt(posMatch[1]) : 0;
+        const contextStart = Math.max(0, pos - 100);
+        const contextEnd = Math.min(jsonStr.length, pos + 100);
+        console.error("[Recognize] JSON parse error:", errMsg);
+        console.error("[Recognize] Context around error:", jsonStr.substring(contextStart, contextEnd));
+        console.error("[Recognize] Full length:", jsonStr.length);
+        return NextResponse.json(
+          { error: "识别结果解析失败" },
+          { status: 500 }
+        );
+      }
     }
   } catch (error) {
     if (error instanceof Error && error.message === "TIMEOUT") {
