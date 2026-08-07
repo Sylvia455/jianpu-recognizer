@@ -5,7 +5,6 @@
   "scripts": {
     "build": "bash ./scripts/build.sh",
     "dev": "bash ./scripts/dev.sh",
-    "preinstall": "npx only-allow pnpm",
     "lint": "eslint",
     "lint:build": "eslint . --quiet",
     "lint:style": "stylelint \"src/**/*.css\"",
@@ -92,8 +91,5 @@
     "tsx": "^4.21.0",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "pnpm": ">=9.0.0"
-  }
+  "packageManager": "pnpm@9.0.0"
 }
