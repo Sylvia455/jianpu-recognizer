@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
-const DEEPSEEK_MODEL = "deepseek-vl2";
+import { LLMClient, Config, HeaderUtils, type Message } from "coze-coding-dev-sdk";
 
 const SYSTEM_PROMPT = `你是一位专业的简谱（Numbered Musical Notation / Jianpu）识别专家。请仔细分析上传的简谱图片，识别其中的所有音乐元素。
 
@@ -103,101 +101,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "DeepSeek API Key 未配置，请设置环境变量 DEEPSEEK_API_KEY" },
-        { status: 500 }
-      );
-    }
+    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
+    const config = new Config();
+    const client = new LLMClient(config, customHeaders);
 
     const dataUri = `data:${mimeType || "image/jpeg"};base64,${imageBase64}`;
 
-    // Call DeepSeek Vision API (OpenAI-compatible format)
-    const deepseekResponse = await fetch(DEEPSEEK_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+    const messages: Message[] = [
+      {
+        role: "system",
+        content: SYSTEM_PROMPT,
       },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
+      {
+        role: "user",
+        content: [
           {
-            role: "system",
-            content: SYSTEM_PROMPT,
+            type: "text",
+            text: "请识别这张简谱图片中的所有音乐元素，按照指定的 JSON 格式输出识别结果。",
           },
           {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "请识别这张简谱图片中的所有音乐元素，按照指定的 JSON 格式输出识别结果。",
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: dataUri,
-                },
-              },
-            ],
+            type: "image_url",
+            image_url: {
+              url: dataUri,
+              detail: "high",
+            },
           },
         ],
-        temperature: 0.1,
-        max_tokens: 4096,
-      }),
+      },
+    ];
+
+    const response = await client.invoke(messages, {
+      model: "doubao-seed-2-0-pro-260215",
+      temperature: 0.1,
     });
 
-    if (!deepseekResponse.ok) {
-      const errText = await deepseekResponse.text();
-      console.error("DeepSeek API error:", deepseekResponse.status, errText);
-      return NextResponse.json(
-        {
-          error: "AI 识别服务调用失败",
-          detail: `DeepSeek API 返回 ${deepseekResponse.status}`,
-        },
-        { status: 502 }
-      );
-    }
-
-    const deepseekData = (await deepseekResponse.json()) as {
-      choices: Array<{
-        message: {
-          content: string;
-        };
-      }>;
-    };
-
-    const content =
-      deepseekData.choices?.[0]?.message?.content?.trim() ?? "";
-
-    if (!content) {
-      return NextResponse.json(
-        { error: "AI 未返回识别结果" },
-        { status: 500 }
-      );
-    }
+    // Parse the JSON response
+    let content = response.content.trim();
 
     // Remove markdown code block wrappers if present
-    let cleaned = content;
-    if (cleaned.startsWith("```json")) {
-      cleaned = cleaned.slice(7);
-    } else if (cleaned.startsWith("```")) {
-      cleaned = cleaned.slice(3);
+    if (content.startsWith("```json")) {
+      content = content.slice(7);
+    } else if (content.startsWith("```")) {
+      content = content.slice(3);
     }
-    if (cleaned.endsWith("```")) {
-      cleaned = cleaned.slice(0, -3);
+    if (content.endsWith("```")) {
+      content = content.slice(0, -3);
     }
-    cleaned = cleaned.trim();
+    content = content.trim();
 
     try {
-      const result = JSON.parse(cleaned);
+      const result = JSON.parse(content);
       return NextResponse.json({ success: true, data: result });
     } catch {
       return NextResponse.json(
         {
           error: "识别结果解析失败",
-          raw: cleaned,
+          raw: content,
         },
         { status: 500 }
       );

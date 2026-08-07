@@ -8,7 +8,7 @@ AI 驱动的简谱图片识别 Web 工具。用户上传简谱图片，后端调
 - **Core**: React 19
 - **Language**: TypeScript 5
 - **UI**: shadcn/ui + Tailwind CSS 4
-- **AI**: DeepSeek VL2 (多模态视觉模型, OpenAI-compatible API)
+- **AI**: 豆包 Seed 2.0 Pro (多模态视觉模型, coze-coding-dev-sdk)
 
 ## 目录结构
 ```
