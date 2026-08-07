@@ -7,8 +7,9 @@ import {
   convertToGP,
 } from "@/lib/format-converters";
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
-const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
+const API_KEY = process.env.DEEPSEEK_API_KEY || "";
+// 使用豆包模型的 OpenAI 兼容 API（火山引擎）
+const API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 
 const SYSTEM_PROMPT = `你是简谱识别专家。分析图片中的简谱，返回 JSON。
 
@@ -30,9 +31,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "请提供图片" }, { status: 400 });
     }
 
-    if (!DEEPSEEK_API_KEY) {
+    if (!API_KEY) {
       return NextResponse.json(
-        { error: "DeepSeek API Key 未配置，请在 Vercel 环境变量中添加 DEEPSEEK_API_KEY" },
+        { error: "API Key 未配置，请在 Vercel 环境变量中添加 DEEPSEEK_API_KEY" },
         { status: 500 }
       );
     }
@@ -51,14 +52,14 @@ export async function POST(request: NextRequest) {
     ];
 
     // 使用流式输出收集完整响应
-    const response = await fetch(DEEPSEEK_API_URL, {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        model: "deepseek-vl2",
+        model: "doubao-2-0-pro-250615",
         messages,
         stream: true,
         max_tokens: 4096,
@@ -67,9 +68,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[Recognize] DeepSeek API error:", response.status, errorText);
+      console.error("[Recognize] API error:", response.status, errorText);
       return NextResponse.json(
-        { error: `DeepSeek API 错误: ${response.status}` },
+        { error: `API 错误: ${response.status} - ${errorText.substring(0, 200)}` },
         { status: 502 }
       );
     }
