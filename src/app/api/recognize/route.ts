@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LLMClient, Config, HeaderUtils, type Message } from "coze-coding-dev-sdk";
 
-const SYSTEM_PROMPT = `你是简谱识别专家。分析图片中的简谱，输出JSON。
+const SYSTEM_PROMPT = `简谱识别专家。输出JSON。
 
-音符: 1-7(do-re), 0=休止符。octave: 0=中音, 1=高音(上方点), 2=低音(下方点)。
-时值duration: 1=全音符, 2=二分, 4=四分, 8=八分(一条下划线), 16=十六分(两条下划线)。
-附点dots: 0/1/2。变音accidental: "sharp"/"flat"/"natural"/null。
-连音线tie_start/tie_end, 圆滑线slur_start/slur_end, 反复repeat_start/repeat_end。
-歌词lyrics, 指法fingering, 拍号time_signature(如4/4), 调号key_signature(如1=C)。
+音符pitch: 1-7(do-re), 0=休止。octave: 0=中音, 1=高音, 2=低音。
+时值duration: 1=全音符, 2=二分, 4=四分, 8=八分, 16=十六分。
+附点dots: 0/1/2。变音accidental: "sharp"/"flat"/null。
+连音tie: true/false。
 
-严格输出JSON，不要markdown标记：
-{"title":"","key_signature":"","time_signature":"","tempo":"","composer":"","lyricist":"","measures":[{"notes":[{"pitch":1,"duration":4,"dots":0,"octave":0,"accidental":null,"tie_start":false,"tie_end":false,"slur_start":false,"slur_end":false,"lyrics":null,"fingering":null}],"repeat_start":false,"repeat_end":false}]}
+JSON格式（去掉null和false字段以缩短长度）：
+{"title":"","key_signature":"1=C","time_signature":"4/4","measures":[{"notes":[{"pitch":1,"duration":4,"octave":0}]}]}
 
-非简谱图片返回空measures。按小节线分隔音符到各小节。`;
+只返回必要字段：pitch, duration, octave, dots, accidental(非null时), tie(非false时)。
+非简谱返回{"measures":[]}。`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,6 +90,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: result });
     } catch (parseError) {
       console.error("[Recognize] JSON parse error:", parseError instanceof Error ? parseError.message : parseError);
+      
+      // Try to fix truncated JSON
+      try {
+        // Find the last complete object/array boundary
+        let fixed = content;
+        // Remove trailing incomplete data
+        const lastComplete = fixed.lastIndexOf("}");
+        const lastArrayEnd = fixed.lastIndexOf("]");
+        const lastValid = Math.max(lastComplete, lastArrayEnd);
+        if (lastValid > 0) {
+          fixed = fixed.substring(0, lastValid + 1);
+          // Try to close any open structures
+          const openBraces = (fixed.match(/{/g) || []).length;
+          const closeBraces = (fixed.match(/}/g) || []).length;
+          const openBrackets = (fixed.match(/\[/g) || []).length;
+          const closeBrackets = (fixed.match(/\]/g) || []).length;
+          for (let i = 0; i < openBrackets - closeBrackets; i++) fixed += "]";
+          for (let i = 0; i < openBraces - closeBraces; i++) fixed += "}";
+          const fixedResult = JSON.parse(fixed);
+          console.log("[Recognize] Fixed truncated JSON, length:", fixed.length);
+          return NextResponse.json({ success: true, data: fixedResult });
+        }
+      } catch (fixError) {
+        console.error("[Recognize] JSON fix failed:", fixError instanceof Error ? fixError.message : fixError);
+      }
+      
       console.error("[Recognize] Content preview:", content.substring(0, 500));
       return NextResponse.json(
         {
