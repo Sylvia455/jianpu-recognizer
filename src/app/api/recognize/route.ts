@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Timeout wrapper - 45s max for LLM call
     const llmPromise = client.invoke(messages, {
-      model: "doubao-seed-2-0-lite-260215",
+      model: "doubao-seed-2-0-mini-260215",
       temperature: 0.1,
     });
     const timeoutPromise = new Promise<never>((_, reject) =>
