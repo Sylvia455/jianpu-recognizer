@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    // Timeout wrapper - 45s max for LLM call
+    // Timeout wrapper - 60s max for LLM call
     const llmPromise = client.invoke(messages, {
       model: "doubao-seed-2-0-mini-260215",
       temperature: 0.1,
     });
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("LLM_TIMEOUT")), 45000)
+      setTimeout(() => reject(new Error("LLM_TIMEOUT")), 60000)
     );
     const response = await Promise.race([llmPromise, timeoutPromise]);
 
@@ -72,25 +72,29 @@ export async function POST(request: NextRequest) {
     let content = response.content.trim();
     console.log("[Recognize] LLM response length:", content.length, "preview:", content.substring(0, 200));
 
-    // Remove markdown code block wrappers if present
-    if (content.startsWith("```json")) {
-      content = content.slice(7);
-    } else if (content.startsWith("```")) {
-      content = content.slice(3);
+    // Try to extract JSON from markdown code block
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      content = jsonMatch[1].trim();
+    } else {
+      // Try to find JSON object in the response
+      const jsonStart = content.indexOf("{");
+      const jsonEnd = content.lastIndexOf("}");
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        content = content.substring(jsonStart, jsonEnd + 1);
+      }
     }
-    if (content.endsWith("```")) {
-      content = content.slice(0, -3);
-    }
-    content = content.trim();
 
     try {
       const result = JSON.parse(content);
       return NextResponse.json({ success: true, data: result });
-    } catch {
+    } catch (parseError) {
+      console.error("[Recognize] JSON parse error:", parseError instanceof Error ? parseError.message : parseError);
+      console.error("[Recognize] Content preview:", content.substring(0, 500));
       return NextResponse.json(
         {
           error: "识别结果解析失败",
-          raw: content,
+          raw: content.substring(0, 1000),
         },
         { status: 500 }
       );
