@@ -1,0 +1,148 @@
+00:02:46.352 Running build in Washington, D.C., USA (East) – iad1
+00:02:46.353 Build machine configuration: 2 cores, 8 GB
+00:02:46.595 Cloning github.com/Sylvia455/jianpu-recognizer (Branch: main, Commit: 6aa5785)
+00:02:46.596 Previous build caches not available.
+00:02:50.591 Cloning completed: 3.996s
+00:02:51.106 Running "vercel build"
+00:02:51.121 Vercel CLI 58.1.0
+00:02:51.312 Installing dependencies...
+00:03:51.870 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+00:03:51.923 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+00:03:53.510 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.hirok.io
+00:03:53.512 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.hirok.io
+00:04:00.866 npm warn deprecated recharts@2.15.4: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
+00:04:10.173 
+00:04:10.174 added 1003 packages in 1m
+00:04:10.176 
+00:04:10.176 275 packages are looking for funding
+00:04:10.177   run `npm fund` for details
+00:04:10.248 Detected Next.js version: 16.1.1
+00:04:10.264 Running "npm run build"
+00:04:10.482 
+00:04:10.482 > projects@0.1.0 build
+00:04:10.483 > bash ./scripts/build.sh
+00:04:10.483 
+00:04:10.491 Installing dependencies...
+00:04:11.318  WARN  Moving @react-dev-inspector/babel-plugin that was installed by a different package manager to "node_modules/.ignored
+00:04:11.319  WARN  Moving @react-dev-inspector/middleware that was installed by a different package manager to "node_modules/.ignored
+00:04:11.320  WARN  Moving @tailwindcss/postcss that was installed by a different package manager to "node_modules/.ignored
+00:04:11.321  WARN  Moving @types/node that was installed by a different package manager to "node_modules/.ignored
+00:04:11.322  WARN  Moving @types/pg that was installed by a different package manager to "node_modules/.ignored
+00:04:11.322  WARN  Moving @types/react that was installed by a different package manager to "node_modules/.ignored
+00:04:11.323  WARN  Moving @types/react-dom that was installed by a different package manager to "node_modules/.ignored
+00:04:11.323  WARN  Moving eslint that was installed by a different package manager to "node_modules/.ignored
+00:04:11.324  WARN  Moving eslint-config-next that was installed by a different package manager to "node_modules/.ignored
+00:04:11.325  WARN  Moving only-allow that was installed by a different package manager to "node_modules/.ignored
+00:04:11.325  WARN  Moving react-dev-inspector that was installed by a different package manager to "node_modules/.ignored
+00:04:11.326  WARN  Moving shadcn that was installed by a different package manager to "node_modules/.ignored
+00:04:11.326  WARN  Moving stylelint that was installed by a different package manager to "node_modules/.ignored
+00:04:11.327  WARN  Moving stylelint-config-standard that was installed by a different package manager to "node_modules/.ignored
+00:04:11.327  WARN  Moving tailwindcss that was installed by a different package manager to "node_modules/.ignored
+00:04:11.328  WARN  Moving tsup that was installed by a different package manager to "node_modules/.ignored
+00:04:11.328  WARN  Moving tsx that was installed by a different package manager to "node_modules/.ignored
+00:04:11.329  WARN  Moving typescript that was installed by a different package manager to "node_modules/.ignored
+00:04:11.329  WARN  Moving @aws-sdk/client-s3 that was installed by a different package manager to "node_modules/.ignored
+00:04:11.330  WARN  Moving @aws-sdk/lib-storage that was installed by a different package manager to "node_modules/.ignored
+00:04:11.331  WARN  Moving @hookform/resolvers that was installed by a different package manager to "node_modules/.ignored
+00:04:11.333  WARN  Moving @radix-ui/react-accordion that was installed by a different package manager to "node_modules/.ignored
+00:04:11.334  WARN  Moving @radix-ui/react-alert-dialog that was installed by a different package manager to "node_modules/.ignored
+00:04:11.335  WARN  Moving @radix-ui/react-aspect-ratio that was installed by a different package manager to "node_modules/.ignored
+00:04:11.335  WARN  Moving @radix-ui/react-avatar that was installed by a different package manager to "node_modules/.ignored
+00:04:11.335  WARN  Moving @radix-ui/react-checkbox that was installed by a different package manager to "node_modules/.ignored
+00:04:11.336  WARN  Moving @radix-ui/react-collapsible that was installed by a different package manager to "node_modules/.ignored
+00:04:11.337  WARN  Moving @radix-ui/react-context-menu that was installed by a different package manager to "node_modules/.ignored
+00:04:11.337  WARN  Moving @radix-ui/react-dialog that was installed by a different package manager to "node_modules/.ignored
+00:04:11.338  WARN  Moving @radix-ui/react-dropdown-menu that was installed by a different package manager to "node_modules/.ignored
+00:04:11.338  WARN  Moving @radix-ui/react-hover-card that was installed by a different package manager to "node_modules/.ignored
+00:04:11.339  WARN  Moving @radix-ui/react-label that was installed by a different package manager to "node_modules/.ignored
+00:04:11.339  WARN  Moving @radix-ui/react-menubar that was installed by a different package manager to "node_modules/.ignored
+00:04:11.340  WARN  Moving @radix-ui/react-navigation-menu that was installed by a different package manager to "node_modules/.ignored
+00:04:11.342  WARN  Moving @radix-ui/react-popover that was installed by a different package manager to "node_modules/.ignored
+00:04:11.343  WARN  Moving @radix-ui/react-progress that was installed by a different package manager to "node_modules/.ignored
+00:04:11.344  WARN  Moving @radix-ui/react-radio-group that was installed by a different package manager to "node_modules/.ignored
+00:04:11.344  WARN  Moving @radix-ui/react-scroll-area that was installed by a different package manager to "node_modules/.ignored
+00:04:11.345  WARN  Moving @radix-ui/react-select that was installed by a different package manager to "node_modules/.ignored
+00:04:11.346  WARN  Moving @radix-ui/react-separator that was installed by a different package manager to "node_modules/.ignored
+00:04:11.346  WARN  Moving @radix-ui/react-slider that was installed by a different package manager to "node_modules/.ignored
+00:04:11.347  WARN  Moving @radix-ui/react-slot that was installed by a different package manager to "node_modules/.ignored
+00:04:11.347  WARN  Moving @radix-ui/react-switch that was installed by a different package manager to "node_modules/.ignored
+00:04:11.348  WARN  Moving @radix-ui/react-tabs that was installed by a different package manager to "node_modules/.ignored
+00:04:11.348  WARN  Moving @radix-ui/react-toggle that was installed by a different package manager to "node_modules/.ignored
+00:04:11.349  WARN  Moving @radix-ui/react-toggle-group that was installed by a different package manager to "node_modules/.ignored
+00:04:11.349  WARN  Moving @radix-ui/react-tooltip that was installed by a different package manager to "node_modules/.ignored
+00:04:11.350  WARN  Moving @supabase/supabase-js that was installed by a different package manager to "node_modules/.ignored
+00:04:11.351  WARN  Moving class-variance-authority that was installed by a different package manager to "node_modules/.ignored
+00:04:11.351  WARN  Moving clsx that was installed by a different package manager to "node_modules/.ignored
+00:04:11.353  WARN  Moving cmdk that was installed by a different package manager to "node_modules/.ignored
+00:04:11.354  WARN  Moving coze-coding-dev-sdk that was installed by a different package manager to "node_modules/.ignored
+00:04:11.355  WARN  Moving date-fns that was installed by a different package manager to "node_modules/.ignored
+00:04:11.357  WARN  Moving dotenv that was installed by a different package manager to "node_modules/.ignored
+00:04:11.358  WARN  Moving drizzle-kit that was installed by a different package manager to "node_modules/.ignored
+00:04:11.359  WARN  Moving drizzle-orm that was installed by a different package manager to "node_modules/.ignored
+00:04:11.359  WARN  Moving drizzle-zod that was installed by a different package manager to "node_modules/.ignored
+00:04:11.360  WARN  Moving embla-carousel-react that was installed by a different package manager to "node_modules/.ignored
+00:04:11.361  WARN  Moving input-otp that was installed by a different package manager to "node_modules/.ignored
+00:04:11.361  WARN  Moving jsonrepair that was installed by a different package manager to "node_modules/.ignored
+00:04:11.367  WARN  Moving lucide-react that was installed by a different package manager to "node_modules/.ignored
+00:04:11.368  WARN  Moving next that was installed by a different package manager to "node_modules/.ignored
+00:04:11.368  WARN  Moving next-themes that was installed by a different package manager to "node_modules/.ignored
+00:04:11.368  WARN  Moving pg that was installed by a different package manager to "node_modules/.ignored
+00:04:11.368  WARN  Moving react that was installed by a different package manager to "node_modules/.ignored
+00:04:11.369  WARN  Moving react-day-picker that was installed by a different package manager to "node_modules/.ignored
+00:04:11.369  WARN  Moving react-dom that was installed by a different package manager to "node_modules/.ignored
+00:04:11.370  WARN  Moving react-hook-form that was installed by a different package manager to "node_modules/.ignored
+00:04:11.370  WARN  Moving react-resizable-panels that was installed by a different package manager to "node_modules/.ignored
+00:04:11.371  WARN  Moving recharts that was installed by a different package manager to "node_modules/.ignored
+00:04:11.371  WARN  Moving sonner that was installed by a different package manager to "node_modules/.ignored
+00:04:11.372  WARN  Moving tailwind-merge that was installed by a different package manager to "node_modules/.ignored
+00:04:11.372  WARN  Moving tw-animate-css that was installed by a different package manager to "node_modules/.ignored
+00:04:11.372  WARN  Moving vaul that was installed by a different package manager to "node_modules/.ignored
+00:04:11.373  WARN  Moving zod that was installed by a different package manager to "node_modules/.ignored
+00:04:11.393  WARN  GET https://registry.npmjs.org/@aws-sdk%2Fclient-s3 error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.394  WARN  GET https://registry.npmjs.org/@aws-sdk%2Flib-storage error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.396  WARN  GET https://registry.npmjs.org/@hookform%2Fresolvers error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-accordion error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-alert-dialog error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-aspect-ratio error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-avatar error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-checkbox error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-collapsible error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-context-menu error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-dialog error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-dropdown-menu error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-hover-card error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-label error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-menubar error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:11.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-navigation-menu error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:04:21.395  WARN  GET https://registry.npmjs.org/@aws-sdk%2Fclient-s3 error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.395  WARN  GET https://registry.npmjs.org/@aws-sdk%2Flib-storage error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.395  WARN  GET https://registry.npmjs.org/@hookform%2Fresolvers error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.395  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-accordion error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-alert-dialog error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-aspect-ratio error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-avatar error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-checkbox error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-collapsible error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.397  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-context-menu error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-dialog error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.398  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-dropdown-menu error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.399  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-hover-card error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.399  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-label error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.400  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-menubar error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:04:21.400  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-navigation-menu error (ERR_INVALID_THIS). Will retry in 1 minute. 1 retries left.
+00:05:21.403  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-popover error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.405  ERR_PNPM_META_FETCH_FAIL  GET https://registry.npmjs.org/@aws-sdk%2Fclient-s3: Value of "this" must be of type URLSearchParams
+00:05:21.406  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-progress error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.406  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-radio-group error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.412  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-scroll-area error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.412  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-select error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-separator error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-slider error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-slot error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-switch error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-tabs error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.413  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-toggle error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.414  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-toggle-group error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.416  WARN  GET https://registry.npmjs.org/@radix-ui%2Freact-tooltip error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.416  WARN  GET https://registry.npmjs.org/class-variance-authority error (ERR_INVALID_THIS). Will retry in 10 seconds. 2 retries left.
+00:05:21.439 Error: Command "npm run build" exited with 1
