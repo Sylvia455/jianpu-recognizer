@@ -3,8 +3,8 @@ import { jsonrepair } from "jsonrepair";
 import {
   RecognitionResult,
   convertToMusicXml,
-  convertToJianpuText,
-  convertToGp,
+  convertToJianpu,
+  convertToGP,
 } from "@/lib/format-converters";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // 确保 measures 存在
     if (!result.measures) {
-      result = { measures: [] };
+      result = { title: "", key_signature: "1=C", time_signature: "4/4", tempo: "", composer: "", lyricist: "", measures: [] };
     }
 
     return NextResponse.json({ success: true, data: result });
