@@ -2,19 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { LLMClient, Config, HeaderUtils, type Message } from "coze-coding-dev-sdk";
 import { jsonrepair } from "jsonrepair";
 
-const SYSTEM_PROMPT = `识别图片中的简谱，输出JSON。
-
-字段说明：
-- pitch: 1-7(音符), 0(休止符)
-- octave: 0(中音), 1(高音), 2(低音)
-- duration: 1(全音符), 2(二分), 4(四分), 8(八分), 16(十六分)
-- dots: 0/1/2(附点)
-- accidental: "sharp"/"flat"/null
-
-JSON格式：
-{"title":"","key_signature":"1=C","time_signature":"4/4","measures":[{"notes":[{"pitch":1,"duration":4,"octave":0,"dots":0,"accidental":null}]}]}
-
-只输出JSON。非简谱返回{"measures":[]}`;
+const SYSTEM_PROMPT = [
+  "你是专业的简谱识别专家。请仔细识别图片中的简谱，输出完整的 JSON。",
+  "",
+  "## 识别规则",
+  "- 音符：1-7（do re mi fa sol la si），0 表示休止符",
+  "- 八度：octave=0（中音），octave=1（高音，数字上方有点），octave=2（低音，数字下方有点）",
+  "- 时值：duration=1（全音符），2（二分），4（四分），8（八分，下方一条线），16（十六分，下方两条线）",
+  "- 附点：dots=0/1/2（数字右侧的点）",
+  "- 变音号：accidental=\"sharp\"（#升号）/\"flat\"（b降号）/null",
+  "- 连音线：tie_start=true（连线开始）/tie_end=true（连线结束）",
+  "- 小节线：每个 measure 是一个小节",
+  "",
+  "## 输出格式",
+  '{"title":"","key_signature":"1=C","time_signature":"4/4","measures":[{"notes":[{"pitch":1,"duration":4,"octave":0,"dots":0,"accidental":null,"tie_start":false,"tie_end":false}]}]}',
+  "",
+  "## 重要",
+  "- 必须输出完整 JSON，不要截断",
+  "- 非简谱图片返回 {\"measures\":[]}",
+  "- 只输出 JSON，不要其他文字",
+].join("\n");
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,27 +46,41 @@ export async function POST(request: NextRequest) {
       {
         role: "user",
         content: [
-          { type: "text", text: "识别这张简谱，输出JSON。" },
-          { type: "image_url", image_url: { url: dataUri, detail: "low" } },
+          { type: "text", text: "请识别这张简谱图片，输出完整的 JSON。" },
+          { type: "image_url", image_url: { url: dataUri, detail: "high" } },
         ],
       },
     ];
 
-    // Use invoke with pro model for speed, but with minimal prompt
+    // 使用流式输出确保完整收集响应
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("TIMEOUT")), 60000);
+      setTimeout(() => reject(new Error("TIMEOUT")), 120000);
     });
 
-    const invokePromise = client.invoke(messages, {
-      model: "doubao-seed-2-0-pro-260215",
-      temperature: 0.1,
-    });
+    const streamPromise = (async () => {
+      const chunks: string[] = [];
+      for await (const chunk of client.stream(messages, {
+        model: "doubao-seed-2-0-pro-260215",
+        temperature: 0.1,
+      })) {
+        if (chunk.content) {
+          if (typeof chunk.content === "string") {
+            chunks.push(chunk.content);
+          } else {
+            for (const part of chunk.content) {
+              if (part.type === "text") {
+                chunks.push(String(part.text));
+              }
+            }
+          }
+        }
+      }
+      return chunks.join("");
+    })();
 
-    const response = await Promise.race([invokePromise, timeoutPromise]);
+    const text = await Promise.race([streamPromise, timeoutPromise]);
 
-    const text = response.content;
-
-    if (!text.trim()) {
+    if (!text || !text.trim()) {
       return NextResponse.json({ error: "识别结果为空" }, { status: 500 });
     }
 
@@ -76,34 +97,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Repair common JSON issues from LLM output
-    jsonStr = repairJSON(jsonStr);
-
+    // 三层 JSON 解析策略
+    // 1. 直接解析
     try {
       const result = JSON.parse(jsonStr);
       return NextResponse.json({ success: true, data: result });
-    } catch (e) {
-      // Try jsonrepair as a more powerful fallback
-      try {
-        const repaired = jsonrepair(jsonStr);
-        const result = JSON.parse(repaired);
-        console.log("[Recognize] jsonrepair succeeded");
-        return NextResponse.json({ success: true, data: result });
-      } catch (e2) {
-        const errMsg = e instanceof Error ? e.message : String(e);
-        const posMatch = errMsg.match(/position (\d+)/);
-        const pos = posMatch ? parseInt(posMatch[1]) : 0;
-        const contextStart = Math.max(0, pos - 100);
-        const contextEnd = Math.min(jsonStr.length, pos + 100);
-        console.error("[Recognize] JSON parse error:", errMsg);
-        console.error("[Recognize] Context around error:", jsonStr.substring(contextStart, contextEnd));
-        console.error("[Recognize] Full length:", jsonStr.length);
-        return NextResponse.json(
-          { error: "识别结果解析失败" },
-          { status: 500 }
-        );
-      }
-    }
+    } catch {}
+
+    // 2. repairJSON 修复
+    const repaired1 = repairJSON(jsonStr);
+    try {
+      const result = JSON.parse(repaired1);
+      return NextResponse.json({ success: true, data: result });
+    } catch {}
+
+    // 3. jsonrepair 库修复
+    try {
+      const repaired2 = jsonrepair(repaired1);
+      const result = JSON.parse(repaired2);
+      return NextResponse.json({ success: true, data: result });
+    } catch {}
+
+    return NextResponse.json(
+      { error: "识别结果解析失败，请尝试更清晰的图片" },
+      { status: 500 }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "TIMEOUT") {
       return NextResponse.json(
@@ -119,34 +137,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Repair common JSON issues from LLM output
 function repairJSON(str: string): string {
   let result = str;
-
-  // Remove trailing commas before } or ]
+  // 去除尾逗号
   result = result.replace(/,\s*([}\]])/g, "$1");
-
-  // Fix missing commas between array elements: }{ → },{
-  result = result.replace(/\}\s*\{/g, "},{");
-
-  // Fix missing commas between array elements: ][ → ],[
+  // 补全缺失逗号
+  result = result.replace(/}\s*{/g, "},{");
   result = result.replace(/\]\s*\[/g, "],[");
-
-  // Fix missing commas between object properties: "value" "key" → "value", "key"
-  result = result.replace(/"\s*"/g, '", "');
-
-  // Close unclosed brackets/braces
-  const openBraces = (result.match(/\{/g) || []).length;
-  const closeBraces = (result.match(/\}/g) || []).length;
-  const openBrackets = (result.match(/\[/g) || []).length;
-  const closeBrackets = (result.match(/\]/g) || []).length;
-
-  for (let i = 0; i < openBrackets - closeBrackets; i++) {
-    result += "]";
-  }
-  for (let i = 0; i < openBraces - closeBraces; i++) {
-    result += "}";
-  }
-
+  result = result.replace(/"\s*{/g, '",{');
+  result = result.replace(/}\s*"/g, '},"');
+  // 关闭未闭合的括号
+  const opens = (result.match(/{/g) || []).length;
+  const closes = (result.match(/}/g) || []).length;
+  for (let i = 0; i < opens - closes; i++) result += "}";
+  const arrOpens = (result.match(/\[/g) || []).length;
+  const arrCloses = (result.match(/\]/g) || []).length;
+  for (let i = 0; i < arrOpens - arrCloses; i++) result += "]";
   return result;
 }
