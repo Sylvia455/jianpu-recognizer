@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LLMClient, Config, HeaderUtils, type Message } from "coze-coding-dev-sdk";
+
+const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
+const DEEPSEEK_MODEL = "deepseek-vl2";
 
 const SYSTEM_PROMPT = `你是一位专业的简谱（Numbered Musical Notation / Jianpu）识别专家。请仔细分析上传的简谱图片，识别其中的所有音乐元素。
 
@@ -101,63 +103,101 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const config = new Config();
-    const client = new LLMClient(config, customHeaders);
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "DeepSeek API Key 未配置，请设置环境变量 DEEPSEEK_API_KEY" },
+        { status: 500 }
+      );
+    }
 
     const dataUri = `data:${mimeType || "image/jpeg"};base64,${imageBase64}`;
 
-    const messages: Message[] = [
-      {
-        role: "system",
-        content: SYSTEM_PROMPT,
+    // Call DeepSeek Vision API (OpenAI-compatible format)
+    const deepseekResponse = await fetch(DEEPSEEK_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-      {
-        role: "user",
-        content: [
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
           {
-            type: "text",
-            text: "请识别这张简谱图片中的所有音乐元素，按照指定的 JSON 格式输出识别结果。",
+            role: "system",
+            content: SYSTEM_PROMPT,
           },
           {
-            type: "image_url",
-            image_url: {
-              url: dataUri,
-              detail: "high",
-            },
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "请识别这张简谱图片中的所有音乐元素，按照指定的 JSON 格式输出识别结果。",
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUri,
+                },
+              },
+            ],
           },
         ],
-      },
-    ];
-
-    const response = await client.invoke(messages, {
-      model: "doubao-seed-2-0-pro-260215",
-      temperature: 0.1,
+        temperature: 0.1,
+        max_tokens: 4096,
+      }),
     });
 
-    // Parse the JSON response
-    let content = response.content.trim();
+    if (!deepseekResponse.ok) {
+      const errText = await deepseekResponse.text();
+      console.error("DeepSeek API error:", deepseekResponse.status, errText);
+      return NextResponse.json(
+        {
+          error: "AI 识别服务调用失败",
+          detail: `DeepSeek API 返回 ${deepseekResponse.status}`,
+        },
+        { status: 502 }
+      );
+    }
+
+    const deepseekData = (await deepseekResponse.json()) as {
+      choices: Array<{
+        message: {
+          content: string;
+        };
+      }>;
+    };
+
+    const content =
+      deepseekData.choices?.[0]?.message?.content?.trim() ?? "";
+
+    if (!content) {
+      return NextResponse.json(
+        { error: "AI 未返回识别结果" },
+        { status: 500 }
+      );
+    }
 
     // Remove markdown code block wrappers if present
-    if (content.startsWith("```json")) {
-      content = content.slice(7);
-    } else if (content.startsWith("```")) {
-      content = content.slice(3);
+    let cleaned = content;
+    if (cleaned.startsWith("```json")) {
+      cleaned = cleaned.slice(7);
+    } else if (cleaned.startsWith("```")) {
+      cleaned = cleaned.slice(3);
     }
-    if (content.endsWith("```")) {
-      content = content.slice(0, -3);
+    if (cleaned.endsWith("```")) {
+      cleaned = cleaned.slice(0, -3);
     }
-    content = content.trim();
+    cleaned = cleaned.trim();
 
     try {
-      const result = JSON.parse(content);
+      const result = JSON.parse(cleaned);
       return NextResponse.json({ success: true, data: result });
     } catch {
-      // If JSON parsing fails, return the raw content for debugging
       return NextResponse.json(
         {
           error: "识别结果解析失败",
-          raw: content,
+          raw: cleaned,
         },
         { status: 500 }
       );
