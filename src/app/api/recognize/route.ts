@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
 
 ## 重要
 - 只输出JSON，不要其他内容
-- 用 ```json 包裹
+- 用 \`\`\`json 包裹
 - 仔细识别每个音符的时值（下划线数量）和八度（点的位置）`,
           },
           {
