@@ -1,6 +1,9 @@
 "use client";
 
-import type { RecognitionResult, NoteData, MeasureData } from "@/lib/format-converters";
+import type { RecognitionResult } from "@/lib/format-converters";
+
+type NoteData = RecognitionResult["measures"][number]["notes"][number];
+type MeasureData = RecognitionResult["measures"][number];
 
 interface JianpuRendererProps {
   result: RecognitionResult;
@@ -9,73 +12,73 @@ interface JianpuRendererProps {
 function NoteDisplay({ note }: { note: NoteData }) {
   const isRest = note.pitch === null;
 
-  if (isRest) {
-    return (
-      <span className="inline-flex flex-col items-center mx-[2px]">
-        <span className="text-[#78716C] text-lg font-mono">0</span>
-        {note.duration <= 2 && (
-          <span className="text-[#78716C] text-[10px] font-mono leading-none">
-            {"─".repeat(note.duration === 1 ? 4 : 2)}
-          </span>
-        )}
-      </span>
-    );
-  }
+  // Determine accidental prefix
+  const accidentalPrefix =
+    note.accidental === "sharp"
+      ? "#"
+      : note.accidental === "flat"
+        ? "b"
+        : "";
 
-  const num = note.pitch!;
-  const isHigh = note.octave === 1;
-  const isLow = note.octave === 2;
-  const acc = note.accidental === "sharp" ? "#" : note.accidental === "flat" ? "b" : "";
+  // Octave dots
+  const highDot = note.octave === 1;
+  const lowDot = note.octave === 2;
 
-  // Underlines for short notes (8th = 1, 16th = 2)
-  const underlineCount = note.duration === 8 ? 1 : note.duration === 16 ? 2 : 0;
-
-  // Dashes for extended notes (half = 2, whole = 4, dotted quarter = 1)
-  const dashCount = note.duration === 2 ? 2 : note.duration === 1 ? 4 : note.dots > 0 ? 1 : 0;
+  // Duration underlines
+  const showUnderline = note.duration >= 8;
+  const doubleUnderline = note.duration >= 16;
 
   return (
-    <span className="inline-flex flex-col items-center mx-[3px] relative">
-      {/* High octave dots */}
-      {isHigh && (
-        <span className="text-[10px] leading-[8px] text-[#1A1A1A]">&#9679;</span>
-      )}
-      {!isHigh && !isLow && <span className="h-[8px]" />}
+    <span className="inline-flex flex-col items-center mx-[2px] relative">
+      {/* High octave dot */}
+      <span className="h-3 flex items-center justify-center">
+        {highDot && (
+          <span className="w-1.5 h-1.5 rounded-full bg-stone-800" />
+        )}
+      </span>
 
-      {/* Note number with accidental and dots */}
-      <span className="relative text-xl font-mono font-semibold text-[#1A1A1A] leading-tight">
-        {acc && <span className="text-xs absolute -left-3 top-0 text-[#9A3412]">{acc}</span>}
-        {num}
+      {/* Note content */}
+      <span className="relative">
+        {note.tie_end && (
+          <span className="absolute -left-1 top-0 w-1 h-full border-l-2 border-stone-400 rounded-full" />
+        )}
+        <span className="text-xl font-semibold text-stone-800">
+          {isRest ? "0" : `${accidentalPrefix}${String(note.pitch)}`}
+        </span>
         {note.dots > 0 && (
-          <span className="absolute -right-1.5 top-0 text-sm text-[#9A3412]">
+          <span className="absolute -right-1 top-0 text-xs text-stone-600">
             {".".repeat(note.dots)}
           </span>
         )}
         {note.tie_start && (
-          <span className="absolute -right-3 -top-1 text-[10px] text-[#78716C]">&#8765;</span>
+          <span className="absolute -right-2 top-1/2 -translate-y-1/2 text-stone-400 text-sm">
+            ⌒
+          </span>
+        )}
+      </span>
+
+      {/* Low octave dot */}
+      <span className="h-3 flex items-center justify-center">
+        {lowDot && (
+          <span className="w-1.5 h-1.5 rounded-full bg-stone-800" />
         )}
       </span>
 
       {/* Underlines for short notes */}
-      {underlineCount > 0 && (
-        <span className="flex flex-col items-center leading-[2px]">
-          {Array.from({ length: underlineCount }).map((_, i) => (
-            <span key={i} className="block h-[1.5px] bg-[#1A1A1A]" style={{ minWidth: "14px", width: "14px" }} />
-          ))}
+      {showUnderline && (
+        <span className="absolute bottom-2 left-0 right-0 flex flex-col items-center gap-[1px]">
+          <span className="w-full h-[1.5px] bg-stone-700" />
+          {doubleUnderline && (
+            <span className="w-full h-[1.5px] bg-stone-700" />
+          )}
         </span>
       )}
 
-      {/* Dashes for extended notes */}
-      {dashCount > 0 && underlineCount === 0 && (
-        <span className="text-[#78716C] text-[10px] font-mono leading-none">
-          {"─".repeat(dashCount)}
+      {/* Lyrics */}
+      {note.lyrics && (
+        <span className="text-[10px] text-stone-500 mt-0.5 whitespace-nowrap">
+          {note.lyrics}
         </span>
-      )}
-
-      {!isLow && underlineCount === 0 && dashCount === 0 && <span className="h-[6px]" />}
-
-      {/* Low octave dots */}
-      {isLow && (
-        <span className="text-[10px] leading-[8px] text-[#1A1A1A]">&#9679;</span>
       )}
     </span>
   );
@@ -83,151 +86,89 @@ function NoteDisplay({ note }: { note: NoteData }) {
 
 function MeasureDisplay({
   measure,
-  measureIndex,
-  beatsPerMeasure,
+  index,
 }: {
   measure: MeasureData;
-  measureIndex: number;
-  beatsPerMeasure: number;
+  index: number;
 }) {
-  // Group notes by beats
-  const notesPerBeat = Math.max(1, Math.ceil(measure.notes.length / beatsPerMeasure));
-  const beatGroups: NoteData[][] = [];
-  for (let i = 0; i < measure.notes.length; i += notesPerBeat) {
-    beatGroups.push(measure.notes.slice(i, i + notesPerBeat));
-  }
-  if (beatGroups.length === 0) beatGroups.push([]);
-
   return (
-    <span className="inline-flex items-start relative mr-1">
-      {/* Measure number */}
-      <span className="absolute -top-4 left-0 text-[9px] text-[#A8A29E] font-mono select-none">
-        {measureIndex + 1}
-      </span>
-
-      {/* Notes */}
-      <span className="flex items-end pt-3 gap-px">
-        {beatGroups.map((group, gi) => (
-          <span key={gi} className="inline-flex items-end">
-            {group.map((note, ni) => (
-              <NoteDisplay key={ni} note={note} />
-            ))}
-            {gi < beatGroups.length - 1 && <span className="w-1" />}
-          </span>
+    <span className="inline-flex items-start">
+      {measure.repeat_start && (
+        <span className="flex flex-col items-center mx-0.5 text-stone-500 self-center">
+          <span className="w-[2px] h-6 bg-stone-400" />
+          <span className="w-[1px] h-6 bg-stone-400 ml-[2px]" />
+        </span>
+      )}
+      <span className="inline-flex items-start">
+        {measure.notes.map((note, nIdx) => (
+          <NoteDisplay key={nIdx} note={note} />
         ))}
       </span>
-
-      {/* Bar line */}
-      <span
-        className={`self-stretch ml-2 min-h-[36px] ${
-          measure.repeat_end ? "border-l-2 border-l-[#1A1A1A] border-r-[1.5px] border-r-[#1A1A1A]" : "border-l-[1.5px] border-l-[#1A1A1A]"
-        }`}
-        style={{ width: measure.repeat_end ? "5px" : "1.5px" }}
-      />
+      <span className="self-stretch w-[1px] bg-stone-300 mx-1 min-h-[40px]" />
+      {measure.repeat_end && (
+        <span className="flex flex-col items-center mx-0.5 text-stone-500 self-center">
+          <span className="w-[1px] h-6 bg-stone-400 mr-[2px]" />
+          <span className="w-[2px] h-6 bg-stone-400" />
+        </span>
+      )}
     </span>
   );
 }
 
-export function JianpuRenderer({ result }: JianpuRendererProps) {
-  if (!result.measures || result.measures.length === 0) {
+export default function JianpuRenderer({ result }: JianpuRendererProps) {
+  if (!result || !result.measures || result.measures.length === 0) {
     return (
-      <div className="text-[#78716C] text-sm py-12 text-center border border-dashed border-[#E7E5E4] rounded-lg">
-        未识别到简谱内容，请上传清晰的简谱图片重试
+      <div className="flex items-center justify-center h-40 text-stone-400 text-sm">
+        暂无识别结果
       </div>
     );
   }
 
-  // Parse time signature string like "4/4"
-  const timeSigParts = (result.time_signature || "4/4").split("/");
-  const numerator = parseInt(timeSigParts[0]) || 4;
-  const denominator = parseInt(timeSigParts[1]) || 4;
-
-  // Group measures into lines (4 measures per line)
-  const measuresPerLine = 4;
-  const lines: typeof result.measures[] = [];
-  for (let i = 0; i < result.measures.length; i += measuresPerLine) {
-    lines.push(result.measures.slice(i, i + measuresPerLine));
+  // Group measures into rows (4 measures per row)
+  const rows: MeasureData[][] = [];
+  for (let i = 0; i < result.measures.length; i += 4) {
+    rows.push(result.measures.slice(i, i + 4));
   }
 
   return (
-    <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 overflow-x-auto">
-      {/* Title */}
-      {result.title && (
-        <div className="text-center mb-3">
-          <h2 className="text-xl font-bold text-[#1A1A1A]">{result.title}</h2>
-        </div>
-      )}
-
-      {/* Metadata */}
-      <div className="flex flex-wrap gap-x-5 gap-y-1 mb-5 text-sm text-[#78716C] justify-center border-b border-[#E7E5E4] pb-4">
-        {result.key_signature && (
-          <span>
-            调号: <span className="text-[#1A1A1A] font-medium">{result.key_signature}</span>
+    <div className="space-y-4">
+      {/* Header info */}
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-stone-600 border-b border-stone-200 pb-3">
+        {result.title && (
+          <span className="font-semibold text-stone-800 text-base">
+            {result.title}
           </span>
         )}
-        <span>
-          拍号: <span className="text-[#1A1A1A] font-medium">{numerator}/{denominator}</span>
-        </span>
-        {result.tempo && (
-          <span>
-            速度: <span className="text-[#1A1A1A] font-medium">{result.tempo}</span>
-          </span>
-        )}
-        {result.composer && (
-          <span>
-            作曲: <span className="text-[#1A1A1A] font-medium">{result.composer}</span>
-          </span>
-        )}
-        {result.lyricist && (
-          <span>
-            作词: <span className="text-[#1A1A1A] font-medium">{result.lyricist}</span>
-          </span>
-        )}
+        {result.key_signature && <span>调号：{result.key_signature}</span>}
+        {result.time_signature && <span>拍号：{result.time_signature}</span>}
+        {result.tempo && <span>速度：♩={result.tempo}</span>}
+        {result.composer && <span>作曲：{result.composer}</span>}
+        {result.lyricist && <span>作词：{result.lyricist}</span>}
       </div>
 
-      {/* Notation lines */}
-      <div className="space-y-10 font-mono">
-        {lines.map((line, lineIdx) => (
-          <div key={lineIdx} className="flex items-start">
-            {/* Beginning double bar for first line */}
-            {lineIdx === 0 && (
-              <span className="border-l-[1.5px] border-r-[1.5px] border-[#1A1A1A] self-stretch mr-2 min-h-[36px]" style={{ width: "5px" }} />
-            )}
-
-            {/* Measures */}
-            <div className="flex flex-wrap items-start">
-              {line.map((measure, mIdx) => (
+      {/* Notation rows */}
+      <div className="space-y-3">
+        {rows.map((row, rowIdx) => (
+          <div
+            key={rowIdx}
+            className="flex items-start flex-wrap gap-y-1 bg-stone-50/50 rounded-lg px-3 py-2"
+          >
+            {/* Measure numbers */}
+            <span className="text-[10px] text-stone-400 mr-2 mt-1 min-w-[16px]">
+              {rowIdx * 4 + 1}
+            </span>
+            <span className="flex flex-wrap items-start gap-x-0">
+              {row.map((measure, mIdx) => (
                 <MeasureDisplay
                   key={mIdx}
                   measure={measure}
-                  measureIndex={lineIdx * measuresPerLine + mIdx}
-                  beatsPerMeasure={numerator}
+                  index={rowIdx * 4 + mIdx}
                 />
               ))}
-            </div>
+            </span>
           </div>
         ))}
       </div>
-
-      {/* Lyrics row */}
-      {result.measures.some((m) => m.notes.some((n) => n.lyrics)) && (
-        <div className="mt-6 pt-4 border-t border-[#E7E5E4]">
-          <div className="text-xs text-[#78716C] mb-2">歌词:</div>
-          <div className="flex flex-wrap gap-4 text-sm text-[#1A1A1A] font-mono">
-            {result.measures.map((m, mi) => (
-              <span key={mi} className="flex gap-1">
-                {m.notes
-                  .filter((n) => n.lyrics)
-                  .map((n, ni) => (
-                    <span key={ni} className="px-1">
-                      {n.lyrics}
-                    </span>
-                  ))}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

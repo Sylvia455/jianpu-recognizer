@@ -32,7 +32,7 @@ import {
   formatResultAsText,
   downloadFile,
 } from "@/lib/format-converters";
-import { JianpuRenderer } from "@/components/jianpu-renderer";
+import JianpuRenderer from "@/components/jianpu-renderer";
 
 type ExportFormat = "musicxml" | "jianpu" | "gp";
 
