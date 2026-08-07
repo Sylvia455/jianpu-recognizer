@@ -7,20 +7,58 @@ import {
   convertToGP,
 } from "@/lib/format-converters";
 
-const API_KEY = process.env.DEEPSEEK_API_KEY || "";
-// 使用豆包模型的 OpenAI 兼容 API（火山引擎）
-const API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY || "";
+const ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
-const SYSTEM_PROMPT = `你是简谱识别专家。分析图片中的简谱，返回 JSON。
+/**
+ * 从 LLM 响应中提取 JSON
+ */
+function extractJSON(text: string): string {
+  // 尝试提取 ```json ... ``` 块
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    return jsonMatch[1].trim();
+  }
 
-规则：
-- 音符：1-7，休止符：0
-- octave：中音=0，低音=-1，高音=1
-- duration：4=四分，8=八分，16=十六分，2=二分，1=全音符
-- accidental：null/#/b
+  // 尝试找到 { 开头到 } 结尾
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    return text.substring(start, end + 1);
+  }
 
-JSON 格式：
-{"key_signature":"1=C","time_signature":"4/4","measures":[{"notes":[{"pitch":1,"duration":4,"octave":0,"dots":0,"accidental":null}]}]}`;
+  return text;
+}
+
+/**
+ * 修复不完整的 JSON
+ */
+function repairJSON(jsonStr: string): string {
+  try {
+    return jsonrepair(jsonStr);
+  } catch {
+    // 如果 jsonrepair 失败，尝试手动修复
+    let fixed = jsonStr;
+
+    // 移除尾逗号
+    fixed = fixed.replace(/,\s*([}\]])/g, "$1");
+
+    // 确保括号闭合
+    const openBraces = (fixed.match(/{/g) || []).length;
+    const closeBraces = (fixed.match(/}/g) || []).length;
+    for (let i = 0; i < openBraces - closeBraces; i++) {
+      fixed += "}";
+    }
+
+    const openBrackets = (fixed.match(/\[/g) || []).length;
+    const closeBrackets = (fixed.match(/\]/g) || []).length;
+    for (let i = 0; i < openBrackets - closeBrackets; i++) {
+      fixed += "]";
+    }
+
+    return fixed;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,131 +66,168 @@ export async function POST(request: NextRequest) {
     const { imageBase64, mimeType } = body;
 
     if (!imageBase64) {
-      return NextResponse.json({ error: "请提供图片" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "请提供图片" },
+        { status: 400 }
+      );
     }
 
-    if (!API_KEY) {
+    if (!ZHIPU_API_KEY) {
       return NextResponse.json(
-        { error: "API Key 未配置，请在 Vercel 环境变量中添加 DEEPSEEK_API_KEY" },
+        {
+          success: false,
+          error: "智谱 API Key 未配置，请在 Vercel 环境变量中添加 ZHIPU_API_KEY",
+        },
         { status: 500 }
       );
     }
 
     const dataUrl = `data:${mimeType || "image/jpeg"};base64,${imageBase64}`;
 
-    const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "请识别这张简谱图片，返回 JSON。" },
-          { type: "image_url", image_url: { url: dataUrl, detail: "low" } },
-        ],
-      },
-    ];
-
-    // 使用流式输出收集完整响应
-    const response = await fetch(API_URL, {
+    const response = await fetch(ZHIPU_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${ZHIPU_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "doubao-2-0-pro-250615",
-        messages,
-        stream: true,
-        max_tokens: 4096,
+        model: "glm-4v-flash",
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content: `你是一个专业的简谱识别专家。请仔细分析用户上传的简谱图片，识别所有音乐元素并输出结构化JSON。
+
+## 识别要求
+1. 音符：1-7（do re mi fa sol la si），0 表示休止符
+2. 高低八度：数字上方的点表示高八度，下方的点表示低八度
+3. 时值：
+   - 无下划线：四分音符
+   - 一条下划线：八分音符
+   - 两条下划线：十六分音符
+   - 三条下划线：三十二分音符
+   - 数字后跟横线"-"：增时线，每条增加一个四分音符时值
+4. 附点：数字后的"."表示附点
+5. 小节线：用"|"分隔
+6. 拍号：如 4/4、2/4、3/4、6/8
+7. 调号：如 1=C、1=G、1=F
+8. 速度标记：如 ♩=120
+9. 歌词、连音线、反复记号等
+
+## 输出JSON格式
+{
+  "title": "曲目标题",
+  "key_signature": "1=C",
+  "time_signature": "4/4",
+  "tempo": "♩=120",
+  "composer": "作曲者",
+  "lyricist": "作词者",
+  "lyrics": "歌词文本",
+  "measures": [
+    {
+      "number": 1,
+      "notes": [
+        {
+          "pitch": "1",
+          "octave": 0,
+          "duration": "quarter",
+          "dotted": false,
+          "lyric": ""
+        }
+      ]
+    }
+  ]
+}
+
+## 字段说明
+- pitch: "1"-"7" 或 "0"（休止符）
+- octave: 0=中音，1=高八度，2=高两个八度，-1=低八度，-2=低两个八度
+- duration: "whole"(全音符), "half"(二分), "quarter"(四分), "eighth"(八分), "sixteenth"(十六分), "thirty-second"(三十二分)
+- dotted: 是否有附点
+- lyric: 该音符对应的歌词
+
+## 重要
+- 只输出JSON，不要其他内容
+- 用 ```json 包裹
+- 仔细识别每个音符的时值（下划线数量）和八度（点的位置）`,
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: dataUrl },
+              },
+              {
+                type: "text",
+                text: "请识别这张简谱图片，输出结构化JSON。",
+              },
+            ],
+          },
+        ],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[Recognize] API error:", response.status, errorText);
+      console.error("智谱 API 错误:", errorText);
       return NextResponse.json(
-        { error: `API 错误: ${response.status} - ${errorText.substring(0, 200)}` },
-        { status: 502 }
-      );
-    }
-
-    // 收集流式响应
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = "";
-
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") break;
-
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content;
-              if (delta) {
-                fullContent += delta;
-              }
-            } catch {
-              // 忽略解析错误
-            }
-          }
-        }
-      }
-    }
-
-    console.log(`[Recognize] Full response length: ${fullContent.length}`);
-
-    if (!fullContent) {
-      return NextResponse.json(
-        { error: "LLM 未返回内容" },
+        { success: false, error: `智谱 API 错误: ${response.status}` },
         { status: 500 }
       );
     }
 
-    // 提取 JSON
-    let jsonStr = fullContent;
-    const jsonMatch = fullContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[0];
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    if (!content) {
+      return NextResponse.json(
+        { success: false, error: "模型未返回内容" },
+        { status: 500 }
+      );
     }
 
-    // 尝试解析 JSON
+    // 提取并修复 JSON
+    const jsonStr = extractJSON(content);
+    const repairedJson = repairJSON(jsonStr);
+
     let result: RecognitionResult;
     try {
-      result = JSON.parse(jsonStr);
-    } catch (e) {
-      console.log(`[Recognize] JSON parse error: ${(e as Error).message}`);
-      // 尝试修复
-      try {
-        const repaired = jsonrepair(jsonStr);
-        result = JSON.parse(repaired);
-        console.log("[Recognize] JSON repaired successfully");
-      } catch {
-        console.log("[Recognize] Content (first 500):", fullContent.substring(0, 500));
-        return NextResponse.json(
-          { error: "识别结果解析失败" },
-          { status: 500 }
-        );
-      }
+      result = JSON.parse(repairedJson);
+    } catch {
+      console.error("JSON 解析失败，原始内容:", content);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "JSON 解析失败",
+          rawContent: content.substring(0, 500),
+        },
+        { status: 500 }
+      );
     }
 
     // 确保 measures 存在
     if (!result.measures) {
-      result = { title: "", key_signature: "1=C", time_signature: "4/4", tempo: "", composer: "", lyricist: "", measures: [] };
+      result = {
+        title: "",
+        key_signature: "1=C",
+        time_signature: "4/4",
+        tempo: "",
+        composer: "",
+        lyricist: "",
+        lyrics: "",
+        measures: [],
+      };
     }
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
-    console.error("[Recognize] Error:", error);
+    console.error("识别错误:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "未知错误" },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "未知错误",
+      },
       { status: 500 }
     );
   }
