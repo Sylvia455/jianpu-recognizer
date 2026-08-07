@@ -95,7 +95,7 @@ export default function Home() {
 
   // Compress image before sending to API
   const compressImage = useCallback(
-    (dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> => {
+    (dataUrl: string, maxSize = 800, quality = 0.75): Promise<string> => {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
@@ -149,7 +149,13 @@ export default function Home() {
 
       clearTimeout(timeoutId);
 
-      const json = await res.json();
+      const text = await res.text();
+      let json: { success?: boolean; data?: RecognitionResult; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new Error(`服务器返回异常 (${res.status})`);
+      }
 
       if (!res.ok) {
         throw new Error(json.error || "识别失败");

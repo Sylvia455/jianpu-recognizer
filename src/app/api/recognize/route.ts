@@ -130,10 +130,15 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    const response = await client.invoke(messages, {
+    // Timeout wrapper - 30s max for LLM call
+    const llmPromise = client.invoke(messages, {
       model: "doubao-seed-2-0-pro-260215",
       temperature: 0.1,
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("LLM_TIMEOUT")), 30000)
+    );
+    const response = await Promise.race([llmPromise, timeoutPromise]);
 
     // Parse the JSON response
     let content = response.content.trim();
@@ -163,6 +168,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Recognition error:", error);
+    if (error instanceof Error && error.message === "LLM_TIMEOUT") {
+      return NextResponse.json(
+        { error: "识别超时，请尝试使用更小的图片后重试" },
+        { status: 504 }
+      );
+    }
     return NextResponse.json(
       {
         error: "识别失败，请稍后重试",
