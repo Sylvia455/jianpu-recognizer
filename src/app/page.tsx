@@ -365,7 +365,7 @@ export default function Home() {
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <FileText className="mb-3 h-10 w-10 text-[#E7E5E4]" />
                     <p className="text-sm text-[#78716C]">
-                      上传简谱图片并点击"开始识别"
+                      上传简谱图片并点击&quot;开始识别&quot;
                     </p>
                     <p className="mt-1 text-xs text-[#78716C]">
                       识别结果将在此处显示

@@ -37,7 +37,8 @@ const PITCH_TO_STEP: Record<string, string> = {
   "7": "B",
 };
 
-function escapeXml(str: string): string {
+function escapeXml(str: string | undefined | null): string {
+  if (!str) return "";
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -132,8 +133,8 @@ export function convertToMusicXml(data: RecognitionResult): string {
     <work-title>${escapeXml(data.title || "Untitled")}</work-title>
   </work>
   <identification>
-    <creator type="composer">${escapeXml(data.composer)}</creator>
-    <creator type="lyricist">${escapeXml(data.lyricist)}</creator>
+    <creator type="composer">${escapeXml(data.composer || "")}</creator>
+    <creator type="lyricist">${escapeXml(data.lyricist || "")}</creator>
     <encoding>
       <software>Jianpu Recognizer</software>
       <encoding-date>${new Date().toISOString().split("T")[0]}</encoding-date>
@@ -278,7 +279,7 @@ export function convertToMusicXml(data: RecognitionResult): string {
         if (note.lyrics && note.lyrics !== "") {
           xml += `        <lyric number="1">
           <syllabic>single</syllabic>
-          <text>${escapeXml(note.lyrics)}</text>
+          <text>${escapeXml(note.lyrics || "")}</text>
         </lyric>\n`;
         }
 
