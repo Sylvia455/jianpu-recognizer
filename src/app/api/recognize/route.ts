@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Parse the JSON response
     let content = response.content.trim();
+    console.log("[Recognize] LLM response length:", content.length, "preview:", content.substring(0, 200));
 
     // Remove markdown code block wrappers if present
     if (content.startsWith("```json")) {
@@ -95,18 +96,16 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Recognition error:", error);
+    console.error("Recognition error:", error instanceof Error ? error.message : error);
     if (error instanceof Error && error.message === "LLM_TIMEOUT") {
       return NextResponse.json(
         { error: "识别超时，请尝试使用更小的图片后重试" },
         { status: 504 }
       );
     }
+    const errMsg = error instanceof Error ? error.message : "未知错误";
     return NextResponse.json(
-      {
-        error: "识别失败，请稍后重试",
-        detail: error instanceof Error ? error.message : String(error),
-      },
+      { error: `识别失败: ${errMsg}` },
       { status: 500 }
     );
   }
