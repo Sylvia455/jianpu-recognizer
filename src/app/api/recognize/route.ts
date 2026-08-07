@@ -215,7 +215,6 @@ export async function POST(request: NextRequest) {
         tempo: "",
         composer: "",
         lyricist: "",
-        lyrics: "",
         measures: [],
       };
     }
