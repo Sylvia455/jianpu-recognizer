@@ -92,6 +92,40 @@ export default function Home() {
     [handleFile]
   );
 
+  // Compress image before sending to API
+  const compressImage = useCallback(
+    (dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(dataUrl.split(",")[1]);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", quality);
+          resolve(compressed.split(",")[1]);
+        };
+        img.src = dataUrl;
+      });
+    },
+    []
+  );
+
   const handleRecognize = useCallback(async () => {
     if (!imagePreview) return;
     setIsRecognizing(true);
@@ -99,14 +133,20 @@ export default function Home() {
     setResult(null);
 
     try {
-      const base64 = imagePreview.split(",")[1];
       const mimeType = imagePreview.split(";")[0].split(":")[1];
+      const base64 = await compressImage(imagePreview);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
       const res = await fetch("/api/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType }),
+        body: JSON.stringify({ imageBase64: base64, mimeType: "image/jpeg" }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const json = await res.json();
 
@@ -120,11 +160,15 @@ export default function Home() {
 
       setResult(json.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "识别失败，请稍后重试");
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("识别超时，请尝试使用更清晰的图片后重试");
+      } else {
+        setError(err instanceof Error ? err.message : "识别失败，请稍后重试");
+      }
     } finally {
       setIsRecognizing(false);
     }
-  }, [imagePreview]);
+  }, [imagePreview, compressImage]);
 
   const handleCopy = useCallback(async () => {
     if (!result) return;
