@@ -32,6 +32,7 @@ import {
   formatResultAsText,
   downloadFile,
 } from "@/lib/format-converters";
+import { JianpuRenderer } from "@/components/jianpu-renderer";
 
 type ExportFormat = "musicxml" | "jianpu" | "gp";
 
@@ -419,8 +420,11 @@ export default function Home() {
                     </div>
 
                     {/* Tabs for different views */}
-                    <Tabs defaultValue="structured">
+                    <Tabs defaultValue="preview">
                       <TabsList className="bg-[#FAFAF9]">
+                        <TabsTrigger value="preview" className="text-xs">
+                          效果预览
+                        </TabsTrigger>
                         <TabsTrigger value="structured" className="text-xs">
                           结构化视图
                         </TabsTrigger>
@@ -431,6 +435,10 @@ export default function Home() {
                           详细信息
                         </TabsTrigger>
                       </TabsList>
+
+                      <TabsContent value="preview" className="mt-3">
+                        <JianpuRenderer result={result} />
+                      </TabsContent>
 
                       <TabsContent value="structured" className="mt-3">
                         <div className="max-h-64 overflow-auto rounded-lg border border-[#E7E5E4] bg-white p-3">
