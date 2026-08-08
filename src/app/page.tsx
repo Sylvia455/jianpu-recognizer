@@ -95,7 +95,7 @@ export default function Home() {
 
   // Compress image before sending to API
   const compressImage = useCallback(
-    (dataUrl: string, maxSize = 1600, quality = 0.85): Promise<string> => {
+    (dataUrl: string, maxSize = 2048, quality = 0.92): Promise<string> => {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
