@@ -95,7 +95,7 @@ export default function Home() {
 
   // Compress image before sending to API
   const compressImage = useCallback(
-    (dataUrl: string, maxSize = 2048, quality = 0.92): Promise<string> => {
+    (dataUrl: string, maxSize = 1200, quality = 0.8): Promise<string> => {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
@@ -169,6 +169,8 @@ export default function Home() {
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         setError("识别超时，请尝试使用更清晰的图片后重试");
+      } else if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("网络请求失败，请检查网络连接后重试");
       } else {
         setError(err instanceof Error ? err.message : "识别失败，请稍后重试");
       }
