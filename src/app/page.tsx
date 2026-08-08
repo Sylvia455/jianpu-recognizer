@@ -138,7 +138,7 @@ export default function Home() {
       const base64 = await compressImage(imagePreview);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
 
       const res = await fetch("/api/recognize", {
         method: "POST",
