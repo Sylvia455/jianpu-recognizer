@@ -62,6 +62,7 @@ function repairJSON(jsonStr: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[recognize] 请求开始, API Key 存在:", !!QWEN_API_KEY);
     const body = await request.json();
     const { imageBase64, mimeType } = body;
 
@@ -71,6 +72,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    console.log("[recognize] 图片大小:", imageBase64.length, "bytes, mimeType:", mimeType);
 
     if (!QWEN_API_KEY) {
       return NextResponse.json(
@@ -188,6 +191,7 @@ export async function POST(request: NextRequest) {
 - 仔细识别每个音符的时值（下划线数量）和八度（点的位置）
 - 休止符的 pitch 设为 null`;
 
+    console.log("[recognize] 正在调用通义千问 API...");
     const response = await fetch(QWEN_API_URL, {
       method: "POST",
       headers: {
@@ -218,6 +222,8 @@ export async function POST(request: NextRequest) {
         ],
       }),
     });
+
+    console.log("[recognize] API 响应状态:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
