@@ -7,8 +7,8 @@ import {
   convertToGP,
 } from "@/lib/format-converters";
 
-const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY || "";
-const ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+const QWEN_API_KEY = process.env.QWEN_API_KEY || "";
+const QWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 
 /**
  * 从 LLM 响应中提取 JSON
@@ -72,11 +72,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!ZHIPU_API_KEY) {
+    if (!QWEN_API_KEY) {
       return NextResponse.json(
         {
           success: false,
-          error: "智谱 API Key 未配置，请在 Vercel 环境变量中添加 ZHIPU_API_KEY",
+          error: "通义千问 API Key 未配置，请在 Vercel 环境变量中添加 QWEN_API_KEY",
         },
         { status: 500 }
       );
@@ -84,14 +84,14 @@ export async function POST(request: NextRequest) {
 
     const dataUrl = `data:${mimeType || "image/jpeg"};base64,${imageBase64}`;
 
-    const response = await fetch(ZHIPU_API_URL, {
+    const response = await fetch(QWEN_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ZHIPU_API_KEY}`,
+        Authorization: `Bearer ${QWEN_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "glm-4v-plus",
+        model: "qwen-vl-max",
         stream: false,
         messages: [
           {
@@ -220,9 +220,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("智谱 API 错误:", errorText);
+      console.error("通义千问 API 错误:", errorText);
       return NextResponse.json(
-        { success: false, error: `智谱 API 错误：${response.status}` },
+        { success: false, error: `通义千问 API 错误：${response.status}` },
         { status: 500 }
       );
     }
