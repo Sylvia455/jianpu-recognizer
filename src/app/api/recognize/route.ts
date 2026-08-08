@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${ZHIPU_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "glm-4v-flash",
+        model: "glm-4v-plus",
         stream: false,
         messages: [
           {
