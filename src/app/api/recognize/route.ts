@@ -7,8 +7,8 @@ import {
   convertToGP,
 } from "@/lib/format-converters";
 
-const QWEN_API_KEY = process.env.QWEN_API_KEY || "";
-const QWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 /**
  * 从 LLM 响应中提取 JSON
@@ -72,11 +72,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!QWEN_API_KEY) {
+    if (!GEMINI_API_KEY) {
       return NextResponse.json(
         {
           success: false,
-          error: "通义千问 API Key 未配置，请在 Vercel 环境变量中添加 QWEN_API_KEY",
+          error: "Gemini API Key 未配置，请在 Vercel 环境变量中添加 GEMINI_API_KEY",
         },
         { status: 500 }
       );
@@ -84,19 +84,11 @@ export async function POST(request: NextRequest) {
 
     const dataUrl = `data:${mimeType || "image/jpeg"};base64,${imageBase64}`;
 
-    const response = await fetch(QWEN_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${QWEN_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "qwen-vl-max",
-        stream: false,
-        messages: [
-          {
-            role: "system",
-            content: `你是一个专业的简谱识别专家。请仔细分析用户上传的简谱图片，识别所有音乐元素并输出结构化 JSON。
+    // Extract base64 data (remove data:mime;base64, prefix)
+    const base64Data = imageBase64;
+    const mimeTypeClean = mimeType || "image/jpeg";
+
+    const systemPrompt = `你是一个专业的简谱识别专家。请仔细分析用户上传的简谱图片，识别所有音乐元素并输出结构化 JSON。
 
 ## 极其重要的要求（必须遵守）
 - **必须识别图片中的每一行简谱**，从上到下逐行扫描，不要遗漏任何一行
@@ -197,38 +189,48 @@ export async function POST(request: NextRequest) {
 
 ## 重要
 - 只输出 JSON，不要其他内容
-- 用 \`\`\`json 包裹
 - 仔细识别每个音符的时值（下划线数量）和八度（点的位置）
-- 休止符的 pitch 设为 null`,
-          },
+- 休止符的 pitch 设为 null`;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
           {
-            role: "user",
-            content: [
+            parts: [
               {
-                type: "image_url",
-                image_url: { url: dataUrl },
+                text: systemPrompt + "\n\n请识别这张简谱图片，输出结构化 JSON。",
               },
               {
-                type: "text",
-                text: "请识别这张简谱图片，输出结构化 JSON。",
+                inline_data: {
+                  mime_type: mimeTypeClean,
+                  data: base64Data,
+                },
               },
             ],
           },
         ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 8192,
+        },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("通义千问 API 错误:", errorText);
+      console.error("Gemini API 错误:", errorText);
       return NextResponse.json(
-        { success: false, error: `通义千问 API 错误：${response.status}` },
+        { success: false, error: `Gemini API 错误：${response.status}` },
         { status: 500 }
       );
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     if (!content) {
       return NextResponse.json(
