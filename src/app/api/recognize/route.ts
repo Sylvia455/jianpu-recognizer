@@ -98,59 +98,94 @@ export async function POST(request: NextRequest) {
             role: "system",
             content: `你是一个专业的简谱识别专家。请仔细分析用户上传的简谱图片，识别所有音乐元素并输出结构化 JSON。
 
-## 识别要求
-1. 音符：1-7（do re mi fa sol la si），null 表示休止符
-2. 高低八度：数字上方的点表示高八度，下方的点表示低八度
-3. 时值：
-   - 无下划线：四分音符 (duration=4)
-   - 一条下划线：八分音符 (duration=8)
-   - 两条下划线：十六分音符 (duration=16)
-   - 三条下划线：三十二分音符 (duration=32)
-   - 数字后跟横线"-"：增时线，每条增加一个四分音符时值
-4. 附点：数字后的"."表示附点 (dots=1)
-5. 小节线：用"|"分隔
-6. 拍号：如 4/4、2/4、3/4、6/8
-7. 调号：如 1=C、1=G、1=F
-8. 速度标记：如 J=120
-9. 歌词、连音线、反复记号等
+## 识别要求（非常重要，请仔细识别）
 
-## 输出 JSON 格式
+### 音符识别
+1. **音高**：数字 1-7 对应 do re mi fa sol la si
+2. **休止符**：数字 0 表示休止符，pitch 设为 null
+3. **八度**：
+   - 数字上方有一个点：octave=1（高八度）
+   - 数字上方有两个点：octave=2（高两个八度）
+   - 数字下方有一个点：octave=-1（低八度）
+   - 数字下方有两个点：octave=-2（低两个八度）
+   - 无点：octave=0（中音区）
+
+### 时值识别（最关键！）
+- **四分音符**：数字无下划线，duration=4
+- **八分音符**：数字下方有一条下划线，duration=8
+- **十六分音符**：数字下方有两条下划线，duration=16
+- **三十二分音符**：数字下方有三条下划线，duration=32
+- **二分音符**：数字右侧有一条短横线"-"，duration=2
+- **全音符**：数字右侧有三条短横线"---"，duration=1
+- **附点音符**：数字右侧有小圆点"."，dots=1（时值增加一半）
+
+### 其他标记
+- **小节线**：竖线"|"分隔小节
+- **拍号**：如 4/4、2/4、3/4、6/8（位于谱表开头）
+- **调号**：如 1=C、1=G、1=F（位于谱表开头）
+- **速度**：如 J=120 或 ♩=120
+- **连音线**：连接两个相同音高的弧线，tie_start/tie_end=true
+- **圆滑线**：连接不同音高的弧线，slur_start/slur_end=true
+- **歌词**：音符下方的文字
+
+## 输出 JSON 格式示例
+
+例如简谱：| 1  5  3  5 | 6.  5  4  3 | 2  3  2  1 | 1 - - - |
+对应 JSON：
 {
-  "title": "曲目标题",
+  "title": "",
   "key_signature": "1=C",
   "time_signature": "4/4",
-  "tempo": "J=120",
-  "composer": "作曲者",
-  "lyricist": "作词者",
+  "tempo": "",
+  "composer": "",
+  "lyricist": "",
   "measures": [
     {
       "notes": [
-        {
-          "pitch": 1,
-          "octave": 0,
-          "duration": 4,
-          "dots": 0,
-          "accidental": null,
-          "tie_start": false,
-          "tie_end": false,
-          "slur_start": false,
-          "slur_end": false,
-          "lyrics": null
-        }
+        {"pitch": 1, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 5, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 3, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 5, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null}
+      ]
+    },
+    {
+      "notes": [
+        {"pitch": 6, "octave": 0, "duration": 4, "dots": 1, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 5, "octave": 0, "duration": 8, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 4, "octave": 0, "duration": 8, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 3, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null}
+      ]
+    },
+    {
+      "notes": [
+        {"pitch": 2, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 3, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 2, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null},
+        {"pitch": 1, "octave": 0, "duration": 4, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null}
+      ]
+    },
+    {
+      "notes": [
+        {"pitch": 1, "octave": 0, "duration": 1, "dots": 0, "accidental": null, "tie_start": false, "tie_end": false, "slur_start": false, "slur_end": false, "lyrics": null}
       ]
     }
   ]
 }
 
-## 字段说明
-- pitch: 1-7 数字（do re mi fa sol la si），null 表示休止符
-- octave: 0=中音，1=高八度，2=高两个八度，-1=低八度，-2=低两个八度
-- duration: 1=全音符，2=二分音符，4=四分音符，8=八分音符，16=十六分音符，32=三十二分音符
-- dots: 附点数量（0=无附点，1=单附点，2=双附点）
-- accidental: null 或 "sharp"(升号) 或 "flat"(降号)
-- tie_start/tie_end: 连音线开始/结束
-- slur_start/slur_end: 圆滑线开始/结束
-- lyrics: 该音符对应的歌词文本，null 表示无歌词
+注意：
+- 6. 表示附点四分音符（duration=4, dots=1）
+- 5 和 4 下方有下划线，是八分音符（duration=8）
+- 1 - - - 表示全音符（duration=1）
+
+## 字段详细说明
+- **pitch**: 1-7 数字（do re mi fa sol la si），休止符设为 null
+- **octave**: 0=中音，1=高八度（数字上方一个点），2=高两个八度，-1=低八度（数字下方一个点），-2=低两个八度
+- **duration**: 音符时值 - 1=全音符，2=二分音符，4=四分音符，8=八分音符，16=十六分音符，32=三十二分音符
+- **dots**: 附点数量 - 0=无附点，1=单附点（时值×1.5），2=双附点（时值×1.75）
+- **accidental**: 变音记号 - null=无，"sharp"=升号#，"flat"=降号b
+- **tie_start/tie_end**: 连音线（连接相同音高）的开始/结束
+- **slur_start/slur_end**: 圆滑线（连接不同音高）的开始/结束
+- **lyrics**: 该音符下方的歌词文字，无歌词则为 null
 
 ## 重要
 - 只输出 JSON，不要其他内容
