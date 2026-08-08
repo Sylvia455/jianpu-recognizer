@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${QWEN_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "qwen-vl-max",
+        model: "qwen-vl-plus",
         stream: false,
         messages: [
           {
